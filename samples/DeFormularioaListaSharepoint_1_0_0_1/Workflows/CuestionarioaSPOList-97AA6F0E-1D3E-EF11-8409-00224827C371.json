@@ -1,0 +1,109 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_microsoftforms": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr1ae_sharedmicrosoftforms_82d76"
+        },
+        "api": {
+          "name": "shared_microsoftforms"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr1ae_sharedsharepointonline_06f81"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "Cuando_se_envía_una_respuesta_nueva": {
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "99507b52-76c3-406f-a64d-cd4d6c60be0e"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
+              "connectionName": "shared_microsoftforms",
+              "operationId": "CreateFormWebhook"
+            },
+            "parameters": {
+              "form_id": "kk0MoQAXPkS0snEDBnezAR1xYj9UZ0REmh_t9EDdzkRUNDJZTlNSMEFBVERWRkc2TTNQRzBRRjhZVS4u"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Obtener_los_detalles_de_la_respuesta": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "415b4aef-c10e-4a52-84eb-974f779604c4"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
+              "connectionName": "shared_microsoftforms",
+              "operationId": "GetFormResponseById"
+            },
+            "parameters": {
+              "form_id": "kk0MoQAXPkS0snEDBnezAR1xYj9UZ0REmh_t9EDdzkRUNDJZTlNSMEFBVERWRkc2TTNQRzBRRjhZVS4u",
+              "response_id": "@triggerOutputs()?['body/resourceData/responseId']"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Crear_elemento": {
+          "runAfter": {
+            "Obtener_los_detalles_de_la_respuesta": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "248ca92a-1222-4ab4-853d-6c632e0e7c2b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "PostItem"
+            },
+            "parameters": {
+              "dataset": "https://vqrzz.sharepoint.com/sites/PowerPlatformPro",
+              "table": "821a2e9c-c0c8-48ba-9722-6c4f1527a3dd",
+              "item/Nombre": "@outputs('Obtener_los_detalles_de_la_respuesta')?['body/r076b166124464956a6d515172cebd0b4']",
+              "item/EmpTransporte/Value": "@outputs('Obtener_los_detalles_de_la_respuesta')?['body/r7c9560ed566c4300a4f662a940a95e64']",
+              "item/Fecha": "@outputs('Obtener_los_detalles_de_la_respuesta')?['body/submitDate']",
+              "item/Pregunta1/Value": "@outputs('Obtener_los_detalles_de_la_respuesta')?['body/r7127d5356e7f45948507233f3ad33751']",
+              "item/Pregunta2/Value": "@outputs('Obtener_los_detalles_de_la_respuesta')?['body/r906c85355e7949578f3e54c63ff051f5']"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
