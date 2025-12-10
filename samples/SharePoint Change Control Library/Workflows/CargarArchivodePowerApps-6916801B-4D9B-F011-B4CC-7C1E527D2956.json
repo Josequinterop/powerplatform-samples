@@ -1,0 +1,174 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "cr1ae_sharedsharepointonline_9264a"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "d9504ecc-5075-48c7-80f0-4a6dc00ab2f6"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "title": "Contenido del archivo",
+                  "type": "object",
+                  "x-ms-dynamically-added": true,
+                  "description": "Seleccione un archivo o una imagen.",
+                  "x-ms-content-hint": "FILE",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "contentBytes": {
+                      "type": "string",
+                      "format": "byte"
+                    }
+                  }
+                },
+                "text": {
+                  "title": "Files Properties",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Escribir entrada",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_1": {
+                  "title": "FolderPath",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Escribir entrada",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text",
+                "text_1"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Create_file": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "4ce8a88d-2f47-4e07-afff-dfa03ac5a393"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_sharepointonline",
+              "operationId": "CreateFile",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+            },
+            "parameters": {
+              "dataset": "https://vqrzz.sharepoint.com/sites/PruebasKaudal",
+              "folderPath": "/@{triggerBody()['text_1']}",
+              "name": "@triggerBody()['file']['name']",
+              "body": "@triggerBody()['file']['contentBytes']"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "Respond_to_a_Power_App_or_flow": {
+          "runAfter": {
+            "Update_file_properties": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "921ea526-adbc-4212-8cfb-75bcb81747b1"
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "file_uploaded": "yes"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file_uploaded": {
+                  "title": "file uploaded",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "Update_file_properties": {
+          "runAfter": {
+            "Redactar": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "427bb1f2-fc4c-4d92-9dd8-f7edf2c0920b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_sharepointonline",
+              "operationId": "PatchFileItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+            },
+            "parameters": {
+              "dataset": "@outputs('Redactar')",
+              "table": "ce9c1d45-8846-4940-96a1-ee21654d7940",
+              "id": "@outputs('Create_file')?['body/ItemId']",
+              "item": "@json(triggerBody()['text'])"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Redactar": {
+          "runAfter": {
+            "Create_file": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "2793a308-3272-4275-a41d-2d5f6054b513"
+          },
+          "type": "Compose",
+          "inputs": "https://vqrzz.sharepoint.com/sites/PruebasKaudal"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}
